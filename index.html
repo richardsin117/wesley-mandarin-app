@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Wesley's Mandarin Playground</title>
+<style>
+  :root{
+    --bg:#fef6e4; --card:#fff; --accent:#ff6b6b; --accent2:#FFD166;
+    --muted:#666;
+    font-family: "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#fef6e4,#fff);color:#222}
+  .app{max-width:980px;margin:18px auto;padding:12px;}
+  header{display:flex;align-items:center;gap:12px}
+  h1{margin:0;font-size:1.6rem}
+  .sub{color:var(--muted);font-size:0.95rem}
+  .modes{display:flex;gap:12px;margin:14px 0;flex-wrap:wrap}
+  .mode-btn{
+    background:linear-gradient(180deg,#fff,#f6f6f6);border:2px solid #ffe6d6;
+    padding:12px 16px;border-radius:12px;font-weight:700;cursor:pointer;
+    box-shadow:0 6px 12px rgba(0,0,0,0.06);min-width:140px;text-align:center;
+  }
+  .mode-btn:active{transform:translateY(2px)}
+  .board{margin-top:14px;padding:16px;border-radius:14px;background:var(--card);box-shadow:0 8px 20px rgba(0,0,0,0.05)}
+  .big-emoji{font-size:5.5rem;line-height:1}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+  .btn.secondary{background:var(--accent2);color:#111}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+  .tile{background:#fff;border-radius:10px;padding:14px;text-align:center;font-size:1.2rem;cursor:pointer;box-shadow:0 6px 10px rgba(0,0,0,0.04)}
+  .tile.small{padding:8px}
+  .pinyin{font-size:1rem;color:#333;margin-top:6px}
+  .chinese{font-size:1.6rem;font-weight:800}
+  .english{font-size:0.95rem;color:var(--muted)}
+  .flash-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .stats{color:var(--muted);font-size:0.9rem}
+  .track{display:flex;gap:8px;align-items:flex-end;margin-top:12px;overflow:auto;padding-bottom:6px}
+  .lane{display:flex;flex-direction:column;gap:6px;width:100%;min-width:220px}
+  .cells{display:flex;gap:6px}
+  .cell{width:36px;height:26px;border-radius:6px;background:#eee}
+  .car{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+  .wesley{background:#ffb3b3}
+  .op1{background:#b3d4ff}
+  .op2{background:#b3ffcf}
+  .confetti{position:fixed;pointer-events:none;left:0;top:0;width:100%;height:100%;z-index:9999}
+  .small-note{font-size:0.9rem;color:var(--muted);margin-top:8px}
+  footer{margin-top:16px;color:var(--muted);font-size:0.9rem}
+  .settings{margin-left:auto;display:flex;gap:8px;align-items:center}
+  label.switch{display:inline-flex;gap:8px;align-items:center}
+  input[type="range"]{width:120px}
+  /* simple animations */
+  @keyframes fall {
+    from {transform:translateY(-10vh) rotate(0deg);opacity:1}
+    to {transform:translateY(110vh) rotate(600deg);opacity:0}
+  }
+</style>
+</head>
+<body>
+<div class="app" role="main" aria-label="Wesley's Mandarin Playground">
+  <header>
+    <div>
+      <h1>Wesley's Mandarin Playground 🐶🏎️</h1>
+      <div class="sub">Play with animals, learn Mandarin, and win races!</div>
+    </div>
+    <div class="settings" aria-hidden>
+      <label class="switch">Show Chinese <input id="toggleChinese" type="checkbox" checked></label>
+      <label class="switch">Show Pinyin <input id="togglePinyin" type="checkbox" checked></label>
+      <label class="switch">Show English <input id="toggleEnglish" type="checkbox"></label>
+      <div style="margin-left:8px">TTS rate <input id="ttsRate" type="range" min="0.6" max="1.4" step="0.1" value="1"></div>
+    </div>
+  </header>
+
+  <div class="modes" role="navigation" aria-label="Game modes">
+    <button class="mode-btn" id="btnLearn">Flashcards — Learn</button>
+    <button class="mode-btn" id="btnMatch">Sound Match</button>
+    <button class="mode-btn" id="btnRace">Race Game</button>
+    <button class="mode-btn" id="btnQuiz">Quick Quiz</button>
+  </div>
+
+  <div id="board" class="board" tabindex="0">
+    <!-- dynamic content -->
+    <div style="text-align:center;padding:40px;color:var(--muted)">Choose a game to start. Try Flashcards to meet the animals, then Race for a quick win!</div>
+  </div>
+
+  <footer>
+    Tip: keep sessions short (5–10 minutes). Praise loudly! — Parent controls: toggle pinyin/characters above.
+  </footer>
+</div>
+
+<div id="confettiLayer" class="confetti" aria-hidden="true"></div>
+
+<script>
+/* ===== Data ===== */
+const animals = [
+  {id:'dog', emoji:'🐶', english:'dog', chinese:'狗', pinyin:'gǒu'},
+  {id:'cat', emoji:'🐱', english:'cat', chinese:'猫', pinyin:'māo'},
+  {id:'fish', emoji:'🐟', english:'fish', chinese:'鱼', pinyin:'yú'},
+  {id:'bird', emoji:'🐦', english:'bird', chinese:'鸟', pinyin:'niǎo'},
+  {id:'cow', emoji:'🐮', english:'cow', chinese:'牛', pinyin:'niú'},
+  {id:'horse', emoji:'🐴', english:'horse', chinese:'马', pinyin:'mǎ'},
+  {id:'pig', emoji:'🐷', english:'pig', chinese:'猪', pinyin:'zhū'},
+  {id:'rabbit', emoji:'🐰', english:'rabbit', chinese:'兔子', pinyin:'tùzi'}
+];
+
+let stats = JSON.parse(localStorage.getItem('wesleyMandarinStats') || '{}');
+if(!stats.counts){ stats.counts = {}; animals.forEach(a=>stats.counts[a.id]=0); stats.total=0; }
+
+const board = document.getElementById('board');
+const confettiLayer = document.getElementById('confettiLayer');
+const toggleChinese = document.getElementById('toggleChinese');
+const togglePinyin = document.getElementById('togglePinyin');
+const toggleEnglish = document.getElementById('toggleEnglish');
+const ttsRate = document.getElementById('ttsRate');
+
+function saveStats(){ localStorage.setItem('wesleyMandarinStats', JSON.stringify(stats)); }
+
+/* ===== Speech (Chinese) ===== */
+function speakChinese(text){
+  if(!window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = parseFloat(ttsRate.value || 1);
+  // try to pick a Chinese voice if available
+  const voices = speechSynthesis.getVoices();
+  const zh = voices.find(v => v.lang && v.lang.startsWith('zh'));
+  if(zh) u.voice = zh;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+/* ===== Helper UI ===== */
+function randomPick(arr, n){
+  const copy = arr.slice(); for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]];}
+  return copy.slice(0,n);
+}
+function clearBoard(){ board.innerHTML=''; }
+function showHomeHint(){ clearBoard(); board.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Choose a game above: Flashcards, Sound Match, Race, or Quick Quiz.</div>'; }
+
+/* ===== Flashcards / Learn ===== */
+let flashIndex = 0;
+function renderFlashcard(){
+  const a = animals[flashIndex];
+  clearBoard();
+  const container = document.createElement('div');
+  container.innerHTML = `
+    <div style="display:flex;gap:18px;align-items:center">
+      <div style="width:46%;text-align:center">
+        <div class="big-emoji">${a.emoji}</div>
+      </div>
+      <div style="width:54%">
+        <div class="chinese" style="${toggleChinese.checked ? '' : 'display:none'}">${a.chinese}</div>
+        <div class="pinyin" style="${togglePinyin.checked ? '' : 'display:none'}">${a.pinyin}</div>
+        <div class="english" style="${toggleEnglish.checked ? '' : 'display:none'}">${a.english}</div>
+        <div class="controls">
+          <button class="btn" id="speakBtn">🔊 Say it</button>
+          <button class="btn secondary" id="nextBtn">➡️ Next</button>
+          <button class="btn secondary" id="prevBtn">⬅️ Back</button>
+        </div>
+        <div class="small-note">Tip: point at a toy or do the animal sound while saying the word.</div>
+      </div>
+    </div>
+  `;
+  board.appendChild(container);
+  document.getElementById('speakBtn').onclick = ()=>{
+    speakChinese(a.chinese);
+  };
+  document.getElementById('nextBtn').onclick = ()=>{
+    flashIndex = (flashIndex+1)%animals.length; renderFlashcard();
+  };
+  document.getElementById('prevBtn').onclick = ()=>{
+    flashIndex = (flashIndex-1+animals.length)%animals.length; renderFlashcard();
+  };
+}
+
+/* ===== Sound Match Game ===== */
+function startMatch(){
+  clearBoard();
+  const roundCount = 6;
+  let round = 0;
+  let score = 0;
+
+  const panel = document.createElement('div');
+  panel.innerHTML = `<div style="font-weight:800;font-size:1.2rem">Sound Match — tap the animal you hear</div>
+    <div id="matchGrid" class="grid" style="margin-top:12px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
+      <button class="btn" id="matchNext">Play Sound</button>
+      <div class="stats" id="matchScore">Score: 0 / ${roundCount}</div>
+      <div style="margin-left:auto"><button class="btn secondary" id="matchQuit">Quit</button></div>
+    </div>`;
+  board.appendChild(panel);
+
+  const matchGrid = document.getElementById('matchGrid');
+  function newRound(){
+    if(round>=roundCount){
+      endGame(); return;
+    }
+    round++;
+    // pick 4 animals
+    const choices = randomPick(animals,4);
+    const target = choices[Math.floor(Math.random()*choices.length)];
+    matchGrid.innerHTML = '';
+    choices.forEach(c=>{
+      const tile = document.createElement('button');
+      tile.className='tile';
+      tile.innerHTML = `<div style="font-size:2.6rem">${c.emoji}</div>
+        <div style="${toggleChinese.checked ? '' : 'display:none'}" class="chinese">${c.chinese}</div>
+        <div style="${togglePinyin.checked ? '' : 'display:none'}" class="pinyin">${c.pinyin}</div>`;
+      tile.onclick = ()=>{
+        if(c.id === target.id){
+          // correct
+          score++; stats.counts[c.id] = (stats.counts[c.id]||0)+1; stats.total++; saveStats();
+          matchGrid.querySelectorAll('.tile').forEach(t=>t.style.opacity=0.5);
+          tile.style.background = '#d4ffd4';
+          speakChinese('太棒了'); celebrate();
+          setTimeout(newRound,900);
+        } else {
+          tile.style.background = '#ffdede';
+          speakChinese('不对哦'); // "not correct"
+        }
+        document.getElementById('matchScore').textContent = `Score: ${score} / ${roundCount}`;
+      };
+      matchGrid.appendChild(tile);
+    });
+    // play sound automatically (user gesture restrictions: triggered via button click in UI)
+    speakChinese(target.chinese);
+  }
+
+  function endGame(){
+    matchGrid.innerHTML = `<div style="text-align:center;padding:18px;font-weight:800">Game complete! Score ${score} / ${roundCount}</div>`;
+    const again = document.createElement('button'); again.className='btn'; again.textContent='Play again'; again.onclick = ()=>{ round=0; score=0; newRound();};
+    matchGrid.appendChild(again);
+  }
+
+  document.getElementById('matchNext').onclick = ()=> newRound();
+  document.getElementById('matchQuit').onclick = ()=> showHomeHint();
+  // start first only after a user click
+}
+
+/* ===== Race Game ===== */
+function startRace(){
+  clearBoard();
+  const trackLen = 10;
+  let wesPos = 0, op1 = 0, op2 = 0;
+
+  const container = document.createElement('div');
+  container.innerHTML = `<div style="font-weight:800;font-size:1.15rem">Race Game — pick the right animal to make Wesley win!</div>
+    <div id="trackWrap" style="margin-top:12px"></div>
+    <div style="margin-top:10px">
+      <button class="btn" id="raceSpeak">🔊 Play sound</button>
+      <button class="btn secondary" id="raceQuit">Quit</button>
+      <div class="stats" id="raceMsg" style="display:inline-block;margin-left:12px"></div>
+    </div>
+    <div id="choices" class="grid" style="margin-top:12px"></div>`;
+  board.appendChild(container);
+
+  const trackWrap = document.getElementById('trackWrap');
+  function renderTrack(){
+    trackWrap.innerHTML = '';
+    const lanes = [
+      {className:'wesley', name:"Wesley", carEmoji:'🏎️'},
+      {className:'op1', name:"Blue", carEmoji:'🚗'},
+      {className:'op2', name:"Green", carEmoji:'🚙'}
+    ];
+    lanes.forEach((lane,i)=>{
+      const laneDiv = document.createElement('div');
+      laneDiv.className='lane';
+      laneDiv.innerHTML = `<div style="font-weight:700">${lane.name}</div>
+        <div class="cells"></div>`;
+      const cells = laneDiv.querySelector('.cells');
+      for(let c=0;c<trackLen;c++){
+        const cell = document.createElement('div'); cell.className='cell'; cells.appendChild(cell);
+      }
+      // place car
+      const car = document.createElement('div'); car.className='car '+lane.className;
+      car.innerHTML = lane.carEmoji;
+      car.style.position='relative';
+      // place at leftmost cell by resizing margin-left
+      const pos = (i===0?wesPos:(i===1?op1:op2));
+      car.style.left = (pos*(36+6)) + 'px';
+      laneDiv.appendChild(car);
+      trackWrap.appendChild(laneDiv);
+    });
+  }
+
+  // choices
+  const choicesDiv = document.getElementById('choices');
+  let roundTarget = null;
+  function newRound(){
+    const choices = randomPick(animals,4);
+    roundTarget = choices[Math.floor(Math.random()*choices.length)];
+    choicesDiv.innerHTML = '';
+    choices.forEach(c=>{
+      const t = document.createElement('button'); t.className='tile';
+      t.innerHTML = `<div style="font-size:2.2rem">${c.emoji}</div>
+        <div style="${togglePinyin.checked ? '' : 'display:none'}" class="pinyin">${c.pinyin}</div>`;
+      t.onclick = ()=>{
+        if(c.id===roundTarget.id){
+          // correct
+          wesPos = Math.min(trackLen-1, wesPos+1);
+          stats.counts[c.id] = (stats.counts[c.id]||0)+1; stats.total++; saveStats();
+          speakChinese('太棒了');
+        } else {
+          // wrong - Wesley doesn't move and opponents speed up
+          speakChinese('不对哦');
+          op1 = Math.min(trackLen-1, op1 + (Math.random() < 0.6 ? 1 : 0));
+          op2 = Math.min(trackLen-1, op2 + (Math.random() < 0.5 ? 1 : 0));
+        }
+        // opponents move a bit randomly each round
+        op1 = Math.min(trackLen-1, op1 + (Math.random() < 0.4 ? 1 : 0));
+        op2 = Math.min(trackLen-1, op2 + (Math.random() < 0.4 ? 1 : 0));
+        renderTrack();
+        checkFinish();
+        // auto next round after short delay
+        setTimeout(()=>{ if(!checkFinish(true)) { newRound(); speakChinese(roundTarget.chinese); } }, 700);
+      };
+      choicesDiv.appendChild(t);
+    });
+    document.getElementById('raceMsg').textContent = 'Find: ' + (toggleChinese.checked? roundTarget.chinese : roundTarget.pinyin);
+  }
+
+  function checkFinish(silent){
+    const finished = [wesPos,op1,op2].some(p=>p >= trackLen-1);
+    if(finished){
+      const winner = wesPos>=trackLen-1 ? 'Wesley' : (op1>=trackLen-1 ? 'Blue' : 'Green');
+      if(!silent){
+        if(winner==='Wesley'){ speakChinese('我们赢了！'); celebrate(); }
+        else speakChinese('下次再来！');
+      }
+      // show result
+      choicesDiv.innerHTML = `<div style="text-align:center;padding:10px;font-weight:800">${winner} wins!</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+          <button class="btn" id="playAgain">Play again</button>
+          <button class="btn secondary" id="backHome">Home</button>
+        </div>`;
+      document.getElementById('playAgain').onclick = ()=>{wesPos=0;op1=0;op2=0;renderTrack(); newRound();};
+      document.getElementById('backHome').onclick = ()=> showHomeHint();
+      return true;
+    }
+    return false;
+  }
+
+  document.getElementById('raceSpeak').onclick = ()=>{
+    if(roundTarget) speakChinese(roundTarget.chinese);
+    else newRound();
+  };
+  document.getElementById('raceQuit').onclick = ()=> showHomeHint();
+
+  renderTrack();
+  newRound();
+}
+
+/* ===== Quick Quiz (multiple choice) ===== */
+function startQuiz(){
+  clearBoard();
+  const rounds = 6;
+  let cur = 0, score=0;
+  function nextQ(){
+    if(cur>=rounds){ finish(); return; }
+    cur++;
+    const choices = randomPick(animals,4);
+    const target = choices[Math.floor(Math.random()*choices.length)];
+    clearBoard();
+    board.innerHTML = `<div style="font-weight:800">Question ${cur} / ${rounds}</div>
+      <div style="font-size:2.5rem;margin-top:8px">${target.emoji}</div>
+      <div style="margin-top:12px">What is this in Mandarin?</div>
+      <div class="grid" style="margin-top:8px" id="qgrid"></div>
+      <div style="margin-top:10px"><button class="btn" id="playPron">🔊 Hear it</button> <button class="btn secondary" id="quitQuiz">Quit</button></div>
+      <div class="stats" id="qstat">Score ${score}</div>`;
+    const qgrid = document.getElementById('qgrid');
+    // present options as Chinese characters
+    const optionTexts = choices.map(c => ({id:c.id,text:c.chinese,p:c}));
+    optionTexts.sort(()=>Math.random()-0.5);
+    optionTexts.forEach(o=>{
+      const b = document.createElement('button'); b.className='tile';
+      b.innerHTML = `<div class="chinese">${o.text}</div><div class="pinyin" style="${togglePinyin.checked? '' : 'display:none'}">${o.p.pinyin}</div>`;
+      b.onclick = ()=>{
+        if(o.id === target.id){
+          score++; document.getElementById('qstat').textContent = 'Score ' + score;
+          speakChinese('很好');
+          stats.counts[o.id] = (stats.counts[o.id]||0)+1; stats.total++; saveStats();
+          setTimeout(nextQ,600);
+        } else {
+          speakChinese('不对');
+          setTimeout(nextQ,900);
+        }
+      };
+      qgrid.appendChild(b);
+    });
+    document.getElementById('playPron').onclick = ()=> speakChinese(target.chinese);
+    document.getElementById('quitQuiz').onclick = ()=> showHomeHint();
+  }
+  function finish(){
+    clearBoard();
+    board.innerHTML = `<div style="text-align:center;padding:20px;font-weight:800">Quiz complete! Score ${score} / ${rounds}</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
+        <button class="btn" id="tryAgain">Try again</button>
+        <button class="btn secondary" id="toHome">Home</button>
+      </div>`;
+    document.getElementById('tryAgain').onclick = ()=> startQuiz();
+    document.getElementById('toHome').onclick = ()=> showHomeHint();
+  }
+  nextQ();
+}
+
+/* ===== Confetti ===== */
+function celebrate(){
+  // small confetti burst
+  const colors = ['#FF6B6B','#FFD166','#6BCB77','#4D96FF','#C89CFF'];
+  for(let i=0;i<40;i++){
+    const d = document.createElement('div');
+    d.style.position='absolute';
+    d.style.left = Math.random()*100 + '%';
+    d.style.top = '-5%';
+    d.style.width = (6+Math.random()*10)+'px';
+    d.style.height = (8+Math.random()*12)+'px';
+    d.style.background = colors[Math.floor(Math.random()*colors.length)];
+    d.style.borderRadius = '2px';
+    d.style.transform = `rotate(${Math.random()*360}deg)`;
+    d.style.opacity = '0.95';
+    d.style.animation = `fall ${1.2 + Math.random()*1.2}s linear forwards`;
+    confettiLayer.appendChild(d);
+    setTimeout(()=> d.remove(), 2600);
+  }
+}
+
+/* ===== Event wiring ===== */
+document.getElementById('btnLearn').onclick = ()=> renderFlashcard();
+document.getElementById('btnMatch').onclick = ()=> startMatch();
+document.getElementById('btnRace').onclick = ()=> startRace();
+document.getElementById('btnQuiz').onclick = ()=> startQuiz();
+
+toggleChinese.onchange = ()=> {
+  // re-render current board if showing flashcard/quiz elements (quick approach: just refresh last mode)
+  // For simplicity: nothing — children will see toggles reflected next time they navigate; useful to keep UI responsive.
+};
+togglePinyin.onchange = ()=> {};
+toggleEnglish.onchange = ()=> {};
+ttsRate.oninput = ()=> { /* rate will be read on next speak call */ };
+
+/* initial home */
+showHomeHint();
+
+/* ensure voices are loaded for some browsers */
+if(window.speechSynthesis){
+  speechSynthesis.onvoiceschanged = ()=> { /* noop to prime voices */ };
+}
+
+/* Accessibility: simple keyboard shortcut: space to repeat last spoken word (if any) */
+let lastSpoken = null;
+window.addEventListener('keydown', (e)=> {
+  if(e.key==='r'){ if(lastSpoken) speakChinese(lastSpoken); }
+});
+
+</script>
+</body>
+</html>
