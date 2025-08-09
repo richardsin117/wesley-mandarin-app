@@ -1,413 +1,293 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <link rel="manifest" href="manifest.json">
-
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Wesley's Mandarin Playground</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Wesley's Race Mandarin</title>
+<meta name="description" content="Race themed Mandarin learning for Wesley - kindergarten words, speech practice." />
 <style>
   :root{
-    --bg:#fef6e4; --card:#fff; --accent:#ff6b6b; --accent2:#FFD166;
-    --muted:#666;
-    font-family: "Segoe UI", Roboto, system-ui, -apple-system, "Helvetica Neue", Arial;
+    --bg:#fff7ea; --card:#ffffff; --muted:#5c6b73;
+    --accent:#ff5c5c; --accent2:#ffb703; --track:#e9f2ff;
+    --radius:16px;
+    --big:18px;
   }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,#fef6e4,#fff);color:#222}
-  .app{max-width:980px;margin:18px auto;padding:12px;}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;color:#102a43;background:linear-gradient(180deg,#fff7ea,#fff);}
+  .app{max-width:980px;margin:10px auto;padding:12px;}
   header{display:flex;align-items:center;gap:12px}
-  h1{margin:0;font-size:1.6rem}
+  h1{margin:0;font-size:1.3rem}
   .sub{color:var(--muted);font-size:0.95rem}
-  .modes{display:flex;gap:12px;margin:14px 0;flex-wrap:wrap}
-  .mode-btn{
-    background:linear-gradient(180deg,#fff,#f6f6f6);border:2px solid #ffe6d6;
-    padding:12px 16px;border-radius:12px;font-weight:700;cursor:pointer;
-    box-shadow:0 6px 12px rgba(0,0,0,0.06);min-width:140px;text-align:center;
-  }
-  .mode-btn:active{transform:translateY(2px)}
-  .board{margin-top:14px;padding:16px;border-radius:14px;background:var(--card);box-shadow:0 8px 20px rgba(0,0,0,0.05)}
-  .big-emoji{font-size:5.5rem;line-height:1}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-  .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+  /* Carousel */
+  .carousel{display:flex;gap:10px;overflow:hidden;padding:12px 6px;margin-top:12px}
+  .car-card{min-width:110px;flex:0 0 auto;background:linear-gradient(180deg,#fff,#fbfbff);border-radius:14px;padding:10px;text-align:center;box-shadow:0 8px 20px rgba(16,42,67,0.06);cursor:pointer;user-select:none}
+  .car-card.selected{transform:scale(1.03);outline:3px solid rgba(255,92,92,0.12)}
+  .car-svg{height:56px;width:100%}
+  .car-name{font-weight:800;margin-top:6px}
+  /* tabs */
+  .tabs{display:flex;gap:8px;margin:12px 0;overflow:auto}
+  .tab{background:#fff;padding:10px;border-radius:12px;min-width:110px;text-align:center;font-weight:800;cursor:pointer;box-shadow:0 6px 14px rgba(16,42,67,0.04)}
+  .tab.active{border:3px solid #ffdede}
+  /* board */
+  .board{background:var(--card);padding:12px;border-radius:16px;box-shadow:0 18px 44px rgba(16,42,67,0.06)}
+  .track-wrap{background:var(--track);padding:12px;border-radius:12px}
+  .lane{display:flex;align-items:center;gap:8px;margin-bottom:10px;position:relative}
+  .lane .label{min-width:84px;font-weight:900}
+  .cells{display:flex;gap:8px;flex:1;padding:6px;overflow:hidden}
+  .cell{width:48px;height:44px;border-radius:10px;background:linear-gradient(180deg,#fff,#f6fbff);box-shadow:inset 0 -4px 10px rgba(12,30,50,0.03)}
+  .car-figure{width:56px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;color:white;font-weight:900;position:absolute;left:110px;transition:transform 450ms cubic-bezier(.2,.9,.2,1)}
+  .car-figure.small{width:44px;height:34px;font-size:16px}
+  /* tiles & buttons */
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .tile{background:#fff;padding:12px;border-radius:12px;text-align:center;font-weight:900;cursor:pointer;box-shadow:0 10px 20px rgba(12,30,50,0.04);min-height:80px;display:flex;flex-direction:column;justify-content:center}
+  .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .btn{background:var(--accent);color:white;padding:12px 14px;border-radius:12px;border:none;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 10px 20px rgba(255,92,92,0.12)}
   .btn.secondary{background:var(--accent2);color:#111}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
-  .tile{background:#fff;border-radius:10px;padding:14px;text-align:center;font-size:1.2rem;cursor:pointer;box-shadow:0 6px 10px rgba(0,0,0,0.04)}
-  .tile.small{padding:8px}
-  .pinyin{font-size:1rem;color:#333;margin-top:6px}
-  .chinese{font-size:1.6rem;font-weight:800}
-  .english{font-size:0.95rem;color:var(--muted)}
-  .flash-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
-  .stats{color:var(--muted);font-size:0.9rem}
-  .track{display:flex;gap:8px;align-items:flex-end;margin-top:12px;overflow:auto;padding-bottom:6px}
-  .lane{display:flex;flex-direction:column;gap:6px;width:100%;min-width:220px}
-  .cells{display:flex;gap:6px}
-  .cell{width:36px;height:26px;border-radius:6px;background:#eee}
-  .car{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .wesley{background:#ffb3b3}
-  .op1{background:#b3d4ff}
-  .op2{background:#b3ffcf}
+  .target-banner{display:flex;gap:10px;align-items:center;margin-top:10px;font-weight:900}
+  .mic-btn{background:#2eb872;padding:10px;border-radius:12px;color:white;border:none;font-weight:900;cursor:pointer}
+  .progress{display:flex;gap:6px;margin-top:10px}
+  .prog-cell{height:10px;background:#eee;border-radius:6px;flex:1}
   .confetti{position:fixed;pointer-events:none;left:0;top:0;width:100%;height:100%;z-index:9999}
-  .small-note{font-size:0.9rem;color:var(--muted);margin-top:8px}
-  footer{margin-top:16px;color:var(--muted);font-size:0.9rem}
-  .settings{margin-left:auto;display:flex;gap:8px;align-items:center}
-  label.switch{display:inline-flex;gap:8px;align-items:center}
-  input[type="range"]{width:120px}
-  /* simple animations */
-  @keyframes fall {
-    from {transform:translateY(-10vh) rotate(0deg);opacity:1}
-    to {transform:translateY(110vh) rotate(600deg);opacity:0}
-  }
+  .feedback{font-weight:900;margin-top:8px;font-size:1.05rem}
+  .small{font-size:0.9rem;color:var(--muted)}
+  @media(min-width:720px){ .car-card{min-width:140px} .tile{min-height:100px} }
 </style>
 </head>
 <body>
-<div class="app" role="main" aria-label="Wesley's Mandarin Playground">
+<div class="app" role="application" aria-label="Wesley's Race Mandarin">
   <header>
     <div>
-      <h1>Wesley's Mandarin Playground 🐶🏎️</h1>
-      <div class="sub">Play with animals, learn Mandarin, and win races!</div>
-    </div>
-    <div class="settings" aria-hidden>
-      <label class="switch">Show Chinese <input id="toggleChinese" type="checkbox" checked></label>
-      <label class="switch">Show Pinyin <input id="togglePinyin" type="checkbox" checked></label>
-      <label class="switch">Show English <input id="toggleEnglish" type="checkbox"></label>
-      <div style="margin-left:8px">TTS rate <input id="ttsRate" type="range" min="0.6" max="1.4" step="0.1" value="1"></div>
+      <h1>Wesley's Race Mandarin 🏁</h1>
+      <div class="sub">Wesley the Driver — race by learning Mandarin!</div>
     </div>
   </header>
 
-  <div class="modes" role="navigation" aria-label="Game modes">
-    <button class="mode-btn" id="btnLearn">Flashcards — Learn</button>
-    <button class="mode-btn" id="btnMatch">Sound Match</button>
-    <button class="mode-btn" id="btnRace">Race Game</button>
-    <button class="mode-btn" id="btnQuiz">Quick Quiz</button>
-  </div>
+  <div class="carousel" id="carCarousel" aria-label="Choose your car"></div>
 
-  <div id="board" class="board" tabindex="0">
-    <!-- dynamic content -->
-    <div style="text-align:center;padding:40px;color:var(--muted)">Choose a game to start. Try Flashcards to meet the animals, then Race for a quick win!</div>
-  </div>
+  <div class="tabs" id="categoryTabs" role="tablist" aria-label="Vocabulary categories"></div>
 
-  <footer>
-    Tip: keep sessions short (5–10 minutes). Praise loudly! — Parent controls: toggle pinyin/characters above.
-  </footer>
+  <div class="board" id="board">
+    <div class="track-wrap" id="trackWrap">
+      <div style="text-align:center;padding:28px;color:var(--muted)">Pick a car, choose a category, then choose a mode: Training, Speed Match, Pronunciation Challenge, Championship.</div>
+    </div>
+
+    <div class="controls" id="controls">
+      <button class="btn" id="modeTrain">🏎️ Training (Flash-Race)</button>
+      <button class="btn" id="modeMatch">⚡ Speed Match</button>
+      <button class="btn" id="modePron">🎤 Pronunciation Challenge</button>
+      <button class="btn secondary" id="modeChamp">🏁 Championship Quiz</button>
+      <button class="btn secondary" id="btnReset">♻️ Reset Progress</button>
+    </div>
+
+    <div class="small" style="margin-top:10px">Tip: mic & speech recognition require a secure site (HTTPS) and Chrome for best results. GitHub Pages works fine.</div>
+  </div>
 </div>
 
 <div id="confettiLayer" class="confetti" aria-hidden="true"></div>
 
 <script>
-/* ===== Data ===== */
-const animals = [
-  {id:'dog', emoji:'🐶', english:'dog', chinese:'狗', pinyin:'gǒu'},
-  {id:'cat', emoji:'🐱', english:'cat', chinese:'猫', pinyin:'māo'},
-  {id:'fish', emoji:'🐟', english:'fish', chinese:'鱼', pinyin:'yú'},
-  {id:'bird', emoji:'🐦', english:'bird', chinese:'鸟', pinyin:'niǎo'},
-  {id:'cow', emoji:'🐮', english:'cow', chinese:'牛', pinyin:'niú'},
-  {id:'horse', emoji:'🐴', english:'horse', chinese:'马', pinyin:'mǎ'},
-  {id:'pig', emoji:'🐷', english:'pig', chinese:'猪', pinyin:'zhū'},
-  {id:'rabbit', emoji:'🐰', english:'rabbit', chinese:'兔子', pinyin:'tùzi'}
+/* ============================
+   Vocabulary (kindergarten)
+   ============================ */
+const CATEGORIES = [
+  { id:'animals', label:'Animals', words:[
+      {id:'dog', char:'狗', pinyin:'gǒu', en:'dog', emoji:'🐶'},
+      {id:'cat', char:'猫', pinyin:'māo', en:'cat', emoji:'🐱'},
+      {id:'pig', char:'猪', pinyin:'zhū', en:'pig', emoji:'🐷'},
+      {id:'rabbit', char:'兔子', pinyin:'tùzi', en:'rabbit', emoji:'🐰'},
+      {id:'cow', char:'牛', pinyin:'niú', en:'cow', emoji:'🐮'},
+      {id:'horse', char:'马', pinyin:'mǎ', en:'horse', emoji:'🐴'},
+      {id:'fish', char:'鱼', pinyin:'yú', en:'fish', emoji:'🐟'},
+      {id:'bird', char:'鸟', pinyin:'niǎo', en:'bird', emoji:'🐦'},
+  ]},
+  { id:'numbers', label:'Numbers', words:[
+      {id:'one', char:'一', pinyin:'yī', en:'one'},
+      {id:'two', char:'二', pinyin:'èr', en:'two'},
+      {id:'three', char:'三', pinyin:'sān', en:'three'},
+      {id:'four', char:'四', pinyin:'sì', en:'four'},
+      {id:'five', char:'五', pinyin:'wǔ', en:'five'},
+      {id:'six', char:'六', pinyin:'liù', en:'six'},
+      {id:'seven', char:'七', pinyin:'qī', en:'seven'},
+      {id:'eight', char:'八', pinyin:'bā', en:'eight'},
+      {id:'nine', char:'九', pinyin:'jiǔ', en:'nine'},
+      {id:'ten', char:'十', pinyin:'shí', en:'ten'},
+  ]},
+  { id:'colors', label:'Colors', words:[
+      {id:'red', char:'红', pinyin:'hóng', en:'red'},
+      {id:'blue', char:'蓝', pinyin:'lán', en:'blue'},
+      {id:'green', char:'绿', pinyin:'lǜ', en:'green'},
+      {id:'yellow', char:'黄', pinyin:'huáng', en:'yellow'},
+      {id:'black', char:'黑', pinyin:'hēi', en:'black'},
+      {id:'white', char:'白', pinyin:'bái', en:'white'},
+      {id:'orange', char:'橙', pinyin:'chéng', en:'orange'},
+      {id:'purple', char:'紫', pinyin:'zǐ', en:'purple'},
+  ]},
+  { id:'vehicles', label:'Vehicles', words:[
+      {id:'car', char:'汽车', pinyin:'qìchē', en:'car', emoji:'🚗'},
+      {id:'bus', char:'公交车', pinyin:'gōngjiāochē', en:'bus'},
+      {id:'bike', char:'自行车', pinyin:'zìxíngchē', en:'bicycle'},
+      {id:'train', char:'火车', pinyin:'huǒchē', en:'train'},
+      {id:'plane', char:'飞机', pinyin:'fēijī', en:'airplane'},
+      {id:'truck', char:'卡车', pinyin:'kǎchē', en:'truck'},
+  ]},
+  { id:'shapes', label:'Shapes', words:[
+      {id:'circle', char:'圆形', pinyin:'yuánxíng', en:'circle'},
+      {id:'square', char:'正方形', pinyin:'zhèngfāngxíng', en:'square'},
+      {id:'triangle', char:'三角形', pinyin:'sānjiǎoxíng', en:'triangle'},
+      {id:'rectangle', char:'长方形', pinyin:'chángfāngxíng', en:'rectangle'},
+      {id:'star', char:'星星', pinyin:'xīngxīng', en:'star'},
+      {id:'heart', char:'爱心', pinyin:'àixīn', en:'heart'},
+  ]}
 ];
 
-let stats = JSON.parse(localStorage.getItem('wesleyMandarinStats') || '{}');
-if(!stats.counts){ stats.counts = {}; animals.forEach(a=>stats.counts[a.id]=0); stats.total=0; }
+/* ============================
+   App state
+   ============================ */
+const state = {
+  cars: [
+    {color:'#ff5c5c', name:'Red Rocket', emoji:'🏎️'},
+    {color:'#4da6ff', name:'Blue Bolt', emoji:'🚗'},
+    {color:'#73e6a7', name:'Green Flash', emoji:'🚙'},
+    {color:'#ffd166', name:'Yellow Streak', emoji:'🚕'},
+    {color:'#b388ff', name:'Purple Pulse', emoji:'🏁'}
+  ],
+  chosenCarIndex: 0,
+  chosenCategory: 'animals',
+  mode: null,
+  trackLen: 8,
+  pos: {wes:0, op1:0, op2:0},
+  target: null,
+  history: JSON.parse(localStorage.getItem('wesRaceHistory')||'{}'),
+  // opponents (Peppa-inspired names)
+  opponents: [
+    {name:'Peppa', emoji:'🐷', color:'#ff9fb0'},
+    {name:'George', emoji:'🦖', color:'#8ad1ff'},
+    {name:'Suzy', emoji:'🐑', color:'#ffdede'},
+    {name:'Rebecca', emoji:'🐰', color:'#d9ffd6'},
+    {name:'Danny', emoji:'🐶', color:'#ffd48f'}
+  ]
+};
 
+/* persist chosen car/category */
+function saveSettings(){ localStorage.setItem('wesRaceSettings', JSON.stringify({chosenCarIndex:state.chosenCarIndex, chosenCategory:state.chosenCategory})); }
+function loadSettings(){ const s=JSON.parse(localStorage.getItem('wesRaceSettings')||'{}'); if(typeof s.chosenCarIndex==='number') state.chosenCarIndex=s.chosenCarIndex; if(s.chosenCategory) state.chosenCategory=s.chosenCategory; }
+loadSettings();
+
+/* DOM refs */
+const carCarousel = document.getElementById('carCarousel');
+const categoryTabs = document.getElementById('categoryTabs');
+const trackWrap = document.getElementById('trackWrap');
 const board = document.getElementById('board');
 const confettiLayer = document.getElementById('confettiLayer');
-const toggleChinese = document.getElementById('toggleChinese');
-const togglePinyin = document.getElementById('togglePinyin');
-const toggleEnglish = document.getElementById('toggleEnglish');
-const ttsRate = document.getElementById('ttsRate');
 
-function saveStats(){ localStorage.setItem('wesleyMandarinStats', JSON.stringify(stats)); }
+/* ============================
+   Utilities: shuffle, pick
+   ============================ */
+function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function pickN(arr,n){ return shuffle(arr).slice(0,n); }
 
-/* ===== Speech (Chinese) ===== */
-function speakChinese(text){
-  if(!window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'zh-CN';
-  u.rate = parseFloat(ttsRate.value || 1);
-  // try to pick a Chinese voice if available
-  const voices = speechSynthesis.getVoices();
-  const zh = voices.find(v => v.lang && v.lang.startsWith('zh'));
-  if(zh) u.voice = zh;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
+/* ======= Render car carousel (swipeable) ======= */
+function makeCarSVG(color, emoji){
+  return `<svg viewBox="0 0 120 40" class="car-svg" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <rect x="6" y="10" rx="6" ry="6" width="108" height="18" fill="${color}"/>
+    <rect x="70" y="6" rx="5" ry="5" width="34" height="12" fill="${color}"/>
+    <circle cx="30" cy="30" r="6" fill="#111"/><circle cx="30" cy="30" r="3" fill="#fff"/>
+    <circle cx="86" cy="30" r="6" fill="#111"/><circle cx="86" cy="30" r="3" fill="#fff"/>
+    <text x="60" y="24" font-size="12" text-anchor="middle" fill="#fff">${emoji}</text>
+  </svg>`;
+}
+function renderCarousel(){
+  carCarousel.innerHTML = '';
+  state.cars.forEach((c,idx)=>{
+    const div = document.createElement('div'); div.className = 'car-card' + (idx===state.chosenCarIndex ? ' selected':'');
+    div.innerHTML = `${makeCarSVG(c.color, c.emoji)}<div class="car-name">${c.name}</div>`;
+    div.onclick = ()=>{ state.chosenCarIndex = idx; renderCarousel(); saveSettings(); renderTrack(); };
+    carCarousel.appendChild(div);
+  });
+  enableCarouselSwipe();
 }
 
-/* ===== Helper UI ===== */
-function randomPick(arr, n){
-  const copy = arr.slice(); for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]];}
-  return copy.slice(0,n);
-}
-function clearBoard(){ board.innerHTML=''; }
-function showHomeHint(){ clearBoard(); board.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted)">Choose a game above: Flashcards, Sound Match, Race, or Quick Quiz.</div>'; }
-
-/* ===== Flashcards / Learn ===== */
-let flashIndex = 0;
-function renderFlashcard(){
-  const a = animals[flashIndex];
-  clearBoard();
-  const container = document.createElement('div');
-  container.innerHTML = `
-    <div style="display:flex;gap:18px;align-items:center">
-      <div style="width:46%;text-align:center">
-        <div class="big-emoji">${a.emoji}</div>
-      </div>
-      <div style="width:54%">
-        <div class="chinese" style="${toggleChinese.checked ? '' : 'display:none'}">${a.chinese}</div>
-        <div class="pinyin" style="${togglePinyin.checked ? '' : 'display:none'}">${a.pinyin}</div>
-        <div class="english" style="${toggleEnglish.checked ? '' : 'display:none'}">${a.english}</div>
-        <div class="controls">
-          <button class="btn" id="speakBtn">🔊 Say it</button>
-          <button class="btn secondary" id="nextBtn">➡️ Next</button>
-          <button class="btn secondary" id="prevBtn">⬅️ Back</button>
-        </div>
-        <div class="small-note">Tip: point at a toy or do the animal sound while saying the word.</div>
-      </div>
-    </div>
-  `;
-  board.appendChild(container);
-  document.getElementById('speakBtn').onclick = ()=>{
-    speakChinese(a.chinese);
-  };
-  document.getElementById('nextBtn').onclick = ()=>{
-    flashIndex = (flashIndex+1)%animals.length; renderFlashcard();
-  };
-  document.getElementById('prevBtn').onclick = ()=>{
-    flashIndex = (flashIndex-1+animals.length)%animals.length; renderFlashcard();
-  };
-}
-
-/* ===== Sound Match Game ===== */
-function startMatch(){
-  clearBoard();
-  const roundCount = 6;
-  let round = 0;
-  let score = 0;
-
-  const panel = document.createElement('div');
-  panel.innerHTML = `<div style="font-weight:800;font-size:1.2rem">Sound Match — tap the animal you hear</div>
-    <div id="matchGrid" class="grid" style="margin-top:12px"></div>
-    <div style="display:flex;gap:8px;margin-top:12px;align-items:center">
-      <button class="btn" id="matchNext">Play Sound</button>
-      <div class="stats" id="matchScore">Score: 0 / ${roundCount}</div>
-      <div style="margin-left:auto"><button class="btn secondary" id="matchQuit">Quit</button></div>
-    </div>`;
-  board.appendChild(panel);
-
-  const matchGrid = document.getElementById('matchGrid');
-  function newRound(){
-    if(round>=roundCount){
-      endGame(); return;
+/* simple swipe selection for carousel */
+function enableCarouselSwipe(){
+  let startX=0, moved=false;
+  carCarousel.addEventListener('touchstart', e=>{ startX=e.touches[0].clientX; moved=false; });
+  carCarousel.addEventListener('touchmove', e=>{ moved=true; });
+  carCarousel.addEventListener('touchend', e=>{
+    if(!moved) return;
+    const endX = e.changedTouches[0].clientX; const dx = endX - startX;
+    if(Math.abs(dx) > 30){
+      if(dx < 0) state.chosenCarIndex = Math.min(state.cars.length-1, state.chosenCarIndex+1);
+      else state.chosenCarIndex = Math.max(0, state.chosenCarIndex-1);
+      renderCarousel(); saveSettings(); renderTrack();
     }
-    round++;
-    // pick 4 animals
-    const choices = randomPick(animals,4);
-    const target = choices[Math.floor(Math.random()*choices.length)];
-    matchGrid.innerHTML = '';
-    choices.forEach(c=>{
-      const tile = document.createElement('button');
-      tile.className='tile';
-      tile.innerHTML = `<div style="font-size:2.6rem">${c.emoji}</div>
-        <div style="${toggleChinese.checked ? '' : 'display:none'}" class="chinese">${c.chinese}</div>
-        <div style="${togglePinyin.checked ? '' : 'display:none'}" class="pinyin">${c.pinyin}</div>`;
-      tile.onclick = ()=>{
-        if(c.id === target.id){
-          // correct
-          score++; stats.counts[c.id] = (stats.counts[c.id]||0)+1; stats.total++; saveStats();
-          matchGrid.querySelectorAll('.tile').forEach(t=>t.style.opacity=0.5);
-          tile.style.background = '#d4ffd4';
-          speakChinese('太棒了'); celebrate();
-          setTimeout(newRound,900);
-        } else {
-          tile.style.background = '#ffdede';
-          speakChinese('不对哦'); // "not correct"
-        }
-        document.getElementById('matchScore').textContent = `Score: ${score} / ${roundCount}`;
-      };
-      matchGrid.appendChild(tile);
-    });
-    // play sound automatically (user gesture restrictions: triggered via button click in UI)
-    speakChinese(target.chinese);
-  }
-
-  function endGame(){
-    matchGrid.innerHTML = `<div style="text-align:center;padding:18px;font-weight:800">Game complete! Score ${score} / ${roundCount}</div>`;
-    const again = document.createElement('button'); again.className='btn'; again.textContent='Play again'; again.onclick = ()=>{ round=0; score=0; newRound();};
-    matchGrid.appendChild(again);
-  }
-
-  document.getElementById('matchNext').onclick = ()=> newRound();
-  document.getElementById('matchQuit').onclick = ()=> showHomeHint();
-  // start first only after a user click
+  });
 }
 
-/* ===== Race Game ===== */
-function startRace(){
-  clearBoard();
-  const trackLen = 10;
-  let wesPos = 0, op1 = 0, op2 = 0;
-
-  const container = document.createElement('div');
-  container.innerHTML = `<div style="font-weight:800;font-size:1.15rem">Race Game — pick the right animal to make Wesley win!</div>
-    <div id="trackWrap" style="margin-top:12px"></div>
-    <div style="margin-top:10px">
-      <button class="btn" id="raceSpeak">🔊 Play sound</button>
-      <button class="btn secondary" id="raceQuit">Quit</button>
-      <div class="stats" id="raceMsg" style="display:inline-block;margin-left:12px"></div>
-    </div>
-    <div id="choices" class="grid" style="margin-top:12px"></div>`;
-  board.appendChild(container);
-
-  const trackWrap = document.getElementById('trackWrap');
-  function renderTrack(){
-    trackWrap.innerHTML = '';
-    const lanes = [
-      {className:'wesley', name:"Wesley", carEmoji:'🏎️'},
-      {className:'op1', name:"Blue", carEmoji:'🚗'},
-      {className:'op2', name:"Green", carEmoji:'🚙'}
-    ];
-    lanes.forEach((lane,i)=>{
-      const laneDiv = document.createElement('div');
-      laneDiv.className='lane';
-      laneDiv.innerHTML = `<div style="font-weight:700">${lane.name}</div>
-        <div class="cells"></div>`;
-      const cells = laneDiv.querySelector('.cells');
-      for(let c=0;c<trackLen;c++){
-        const cell = document.createElement('div'); cell.className='cell'; cells.appendChild(cell);
-      }
-      // place car
-      const car = document.createElement('div'); car.className='car '+lane.className;
-      car.innerHTML = lane.carEmoji;
-      car.style.position='relative';
-      // place at leftmost cell by resizing margin-left
-      const pos = (i===0?wesPos:(i===1?op1:op2));
-      car.style.left = (pos*(36+6)) + 'px';
-      laneDiv.appendChild(car);
-      trackWrap.appendChild(laneDiv);
-    });
-  }
-
-  // choices
-  const choicesDiv = document.getElementById('choices');
-  let roundTarget = null;
-  function newRound(){
-    const choices = randomPick(animals,4);
-    roundTarget = choices[Math.floor(Math.random()*choices.length)];
-    choicesDiv.innerHTML = '';
-    choices.forEach(c=>{
-      const t = document.createElement('button'); t.className='tile';
-      t.innerHTML = `<div style="font-size:2.2rem">${c.emoji}</div>
-        <div style="${togglePinyin.checked ? '' : 'display:none'}" class="pinyin">${c.pinyin}</div>`;
-      t.onclick = ()=>{
-        if(c.id===roundTarget.id){
-          // correct
-          wesPos = Math.min(trackLen-1, wesPos+1);
-          stats.counts[c.id] = (stats.counts[c.id]||0)+1; stats.total++; saveStats();
-          speakChinese('太棒了');
-        } else {
-          // wrong - Wesley doesn't move and opponents speed up
-          speakChinese('不对哦');
-          op1 = Math.min(trackLen-1, op1 + (Math.random() < 0.6 ? 1 : 0));
-          op2 = Math.min(trackLen-1, op2 + (Math.random() < 0.5 ? 1 : 0));
-        }
-        // opponents move a bit randomly each round
-        op1 = Math.min(trackLen-1, op1 + (Math.random() < 0.4 ? 1 : 0));
-        op2 = Math.min(trackLen-1, op2 + (Math.random() < 0.4 ? 1 : 0));
-        renderTrack();
-        checkFinish();
-        // auto next round after short delay
-        setTimeout(()=>{ if(!checkFinish(true)) { newRound(); speakChinese(roundTarget.chinese); } }, 700);
-      };
-      choicesDiv.appendChild(t);
-    });
-    document.getElementById('raceMsg').textContent = 'Find: ' + (toggleChinese.checked? roundTarget.chinese : roundTarget.pinyin);
-  }
-
-  function checkFinish(silent){
-    const finished = [wesPos,op1,op2].some(p=>p >= trackLen-1);
-    if(finished){
-      const winner = wesPos>=trackLen-1 ? 'Wesley' : (op1>=trackLen-1 ? 'Blue' : 'Green');
-      if(!silent){
-        if(winner==='Wesley'){ speakChinese('我们赢了！'); celebrate(); }
-        else speakChinese('下次再来！');
-      }
-      // show result
-      choicesDiv.innerHTML = `<div style="text-align:center;padding:10px;font-weight:800">${winner} wins!</div>
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-          <button class="btn" id="playAgain">Play again</button>
-          <button class="btn secondary" id="backHome">Home</button>
-        </div>`;
-      document.getElementById('playAgain').onclick = ()=>{wesPos=0;op1=0;op2=0;renderTrack(); newRound();};
-      document.getElementById('backHome').onclick = ()=> showHomeHint();
-      return true;
-    }
-    return false;
-  }
-
-  document.getElementById('raceSpeak').onclick = ()=>{
-    if(roundTarget) speakChinese(roundTarget.chinese);
-    else newRound();
-  };
-  document.getElementById('raceQuit').onclick = ()=> showHomeHint();
-
-  renderTrack();
-  newRound();
+/* ======= render category tabs ======= */
+function renderTabs(){
+  categoryTabs.innerHTML = '';
+  CATEGORIES.forEach(cat=>{
+    const d = document.createElement('div'); d.className='tab' + (cat.id===state.chosenCategory ? ' active':''); d.textContent = cat.label;
+    d.onclick = ()=>{ state.chosenCategory=cat.id; saveSettings(); renderTabs(); };
+    categoryTabs.appendChild(d);
+  });
 }
 
-/* ===== Quick Quiz (multiple choice) ===== */
-function startQuiz(){
-  clearBoard();
-  const rounds = 6;
-  let cur = 0, score=0;
-  function nextQ(){
-    if(cur>=rounds){ finish(); return; }
-    cur++;
-    const choices = randomPick(animals,4);
-    const target = choices[Math.floor(Math.random()*choices.length)];
-    clearBoard();
-    board.innerHTML = `<div style="font-weight:800">Question ${cur} / ${rounds}</div>
-      <div style="font-size:2.5rem;margin-top:8px">${target.emoji}</div>
-      <div style="margin-top:12px">What is this in Mandarin?</div>
-      <div class="grid" style="margin-top:8px" id="qgrid"></div>
-      <div style="margin-top:10px"><button class="btn" id="playPron">🔊 Hear it</button> <button class="btn secondary" id="quitQuiz">Quit</button></div>
-      <div class="stats" id="qstat">Score ${score}</div>`;
-    const qgrid = document.getElementById('qgrid');
-    // present options as Chinese characters
-    const optionTexts = choices.map(c => ({id:c.id,text:c.chinese,p:c}));
-    optionTexts.sort(()=>Math.random()-0.5);
-    optionTexts.forEach(o=>{
-      const b = document.createElement('button'); b.className='tile';
-      b.innerHTML = `<div class="chinese">${o.text}</div><div class="pinyin" style="${togglePinyin.checked? '' : 'display:none'}">${o.p.pinyin}</div>`;
-      b.onclick = ()=>{
-        if(o.id === target.id){
-          score++; document.getElementById('qstat').textContent = 'Score ' + score;
-          speakChinese('很好');
-          stats.counts[o.id] = (stats.counts[o.id]||0)+1; stats.total++; saveStats();
-          setTimeout(nextQ,600);
-        } else {
-          speakChinese('不对');
-          setTimeout(nextQ,900);
-        }
-      };
-      qgrid.appendChild(b);
-    });
-    document.getElementById('playPron').onclick = ()=> speakChinese(target.chinese);
-    document.getElementById('quitQuiz').onclick = ()=> showHomeHint();
-  }
-  function finish(){
-    clearBoard();
-    board.innerHTML = `<div style="text-align:center;padding:20px;font-weight:800">Quiz complete! Score ${score} / ${rounds}</div>
-      <div style="display:flex;gap:8px;justify-content:center;margin-top:12px">
-        <button class="btn" id="tryAgain">Try again</button>
-        <button class="btn secondary" id="toHome">Home</button>
-      </div>`;
-    document.getElementById('tryAgain').onclick = ()=> startQuiz();
-    document.getElementById('toHome').onclick = ()=> showHomeHint();
-  }
-  nextQ();
+/* ======= Track rendering & car placement ======= */
+function renderTrack(){
+  trackWrap.innerHTML = '';
+  const opponents = state.opponents.slice(0,2); // use two opponents each match for variety
+  // lane for Wesley
+  const lanes = [
+    {key:'wes', label:`Wesley (You)`, color: state.cars[state.chosenCarIndex].color, emoji: state.cars[state.chosenCarIndex].emoji},
+    {key:'op1', label:opponents[0].name, color: opponents[0].color, emoji: opponents[0].emoji},
+    {key:'op2', label:opponents[1].name, color: opponents[1].color, emoji: opponents[1].emoji}
+  ];
+  lanes.forEach(l=>{
+    const lane = document.createElement('div'); lane.className='lane';
+    const label = document.createElement('div'); label.className='label'; label.textContent = l.label;
+    const cells = document.createElement('div'); cells.className='cells';
+    for(let i=0;i<state.trackLen;i++){ const c = document.createElement('div'); c.className='cell'; cells.appendChild(c); }
+    const car = document.createElement('div'); car.className='car-figure'; car.dataset.key = l.key; car.style.background = l.color; car.innerHTML = l.emoji;
+    lane.appendChild(label); lane.appendChild(cells); lane.appendChild(car);
+    trackWrap.appendChild(lane);
+  });
+  placeCars();
+}
+/* visual placement by translateX based on pos */
+function placeCars(){
+  const cellW = 56; // spacing
+  document.querySelectorAll('.car-figure').forEach(el=>{
+    const key = el.dataset.key;
+    const p = state.pos[key] || 0;
+    el.style.transform = `translateX(${(p) * cellW}px)`;
+  });
 }
 
-/* ===== Confetti ===== */
+/* reset race positions */
+function resetRacePositions(){ state.pos = {wes:0,op1:0,op2:0}; placeCars(); }
+
+/* ============================
+   WebAudio sound effects
+   ============================ */
+const audioCtx = (window.AudioContext||window.webkitAudioContext) ? new (window.AudioContext||window.webkitAudioContext)() : null;
+
+function playEngineRev(duration=700, start=80, end=350){
+  if(!audioCtx) return;
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); const b = audioCtx.createBiquadFilter();
+  o.type='sawtooth'; o.frequency.setValueAtTime(start, now); o.frequency.exponentialRampToValueAtTime(end, now + duration/1000);
+  g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(0.08, now+0.05); g.gain.exponentialRampToValueAtTime(0.001, now + duration/1000);
+  b.type='lowpass'; b.frequency.setValueAtTime(1200, now);
+  o.connect(b); b.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now + duration/1000 + 0.05);
+}
+
+function playStartBeep(){ if(!audioCtx) return; const now=audioCtx.currentTime; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(660,now); g.gain.setValueAtTime(0.001,now); g.gain.exponentialRampToValueAtTime(0.12,now+0.02); g.gain.exponentialRampToValueAtTime(0.0001,now+0.2); o.connect(g); g.connect(audioCtx.destination); o.start(now); o.stop(now+0.25); }
+function playWin(){ if(!audioCtx) return; const notes=[880,988,1174]; let t=audioCtx.currentTime; notes.forEach((n,i)=>{ const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(n,t+i*0.12); g.gain.setValueAtTime(0.001,t+i*0.12); g.gain.linearRampToValueAtTime(0.14,t+i*0.12+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.12+0.45); o.connect(g); g.connect(audioCtx.destination); o.start(t+i*0.12); o.stop(t+i*0.12+0.5); }); }
+function playSuccess(){ if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='triangle'; o.frequency.setValueAtTime(880,audioCtx.currentTime); g.gain.setValueAtTime(0.001,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.12,audioCtx.currentTime+0.02); g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.25); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.28); }
+function playError(){ if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='square'; o.frequency.setValueAtTime(220,audioCtx.currentTime); g.gain.setValueAtTime(0.001,audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.08,audioCtx.currentTime+0.01); g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.4); o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+0.42); }
+
+/* tiny confetti burst */
 function celebrate(){
-  // small confetti burst
   const colors = ['#FF6B6B','#FFD166','#6BCB77','#4D96FF','#C89CFF'];
   for(let i=0;i<40;i++){
     const d = document.createElement('div');
@@ -418,43 +298,400 @@ function celebrate(){
     d.style.height = (8+Math.random()*12)+'px';
     d.style.background = colors[Math.floor(Math.random()*colors.length)];
     d.style.borderRadius = '2px';
-    d.style.transform = `rotate(${Math.random()*360}deg)`;
     d.style.opacity = '0.95';
+    d.style.transform = `rotate(${Math.random()*360}deg)`;
     d.style.animation = `fall ${1.2 + Math.random()*1.2}s linear forwards`;
     confettiLayer.appendChild(d);
     setTimeout(()=> d.remove(), 2600);
   }
 }
 
-/* ===== Event wiring ===== */
-document.getElementById('btnLearn').onclick = ()=> renderFlashcard();
-document.getElementById('btnMatch').onclick = ()=> startMatch();
-document.getElementById('btnRace').onclick = ()=> startRace();
-document.getElementById('btnQuiz').onclick = ()=> startQuiz();
-
-toggleChinese.onchange = ()=> {
-  // re-render current board if showing flashcard/quiz elements (quick approach: just refresh last mode)
-  // For simplicity: nothing — children will see toggles reflected next time they navigate; useful to keep UI responsive.
-};
-togglePinyin.onchange = ()=> {};
-toggleEnglish.onchange = ()=> {};
-ttsRate.oninput = ()=> { /* rate will be read on next speak call */ };
-
-/* initial home */
-showHomeHint();
-
-/* ensure voices are loaded for some browsers */
-if(window.speechSynthesis){
-  speechSynthesis.onvoiceschanged = ()=> { /* noop to prime voices */ };
+/* ============================
+   TTS: speak Chinese (zh-CN)
+   ============================ */
+function speakChinese(text){
+  if(!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'zh-CN';
+  u.rate = 0.95;
+  const voices = speechSynthesis.getVoices();
+  const zh = voices.find(v=>v.lang && v.lang.startsWith('zh'));
+  if(zh) u.voice = zh;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
 }
 
-/* Accessibility: simple keyboard shortcut: space to repeat last spoken word (if any) */
+/* ============================
+   Speech Recognition (Pronunciation)
+   - Works best in Chrome (webkitSpeechRecognition)
+   - Fuzzy matching: compare recognized text to target char OR to pinyin (stripped).
+   ============================ */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let recognizer = null;
+function initRecognizer(){
+  if(!SpeechRec) { recognizer = null; return; }
+  recognizer = new SpeechRec();
+  recognizer.lang = 'zh-CN';
+  recognizer.interimResults = false;
+  recognizer.maxAlternatives = 3;
+}
+
+/* helper: strip pinyin diacritics to plain ASCII (āáǎà -> a) */
+function stripDiacritics(p){
+  const map = {'ā':'a','á':'a','ǎ':'a','à':'a','ē':'e','é':'e','ě':'e','è':'e','ī':'i','í':'i','ǐ':'i','ì':'i','ō':'o','ó':'o','ǒ':'o','ò':'o','ū':'u','ú':'u','ǔ':'u','ù':'u','ǖ':'v','ǘ':'v','ǚ':'v','ǜ':'v','ü':'v','ń':'n','ň':'n','ǹ':'n'};
+  return p.split('').map(ch => map[ch] || ch).join('').replace(/\s+/g,'').toLowerCase();
+}
+
+/* Levenshtein distance for fuzzy string comparison */
+function levenshtein(a,b){
+  if(a===b) return 0;
+  const m=a.length, n=b.length;
+  const dp = Array.from({length:m+1}, ()=> new Array(n+1).fill(0));
+  for(let i=0;i<=m;i++) dp[i][0]=i;
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++){
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1]===b[j-1] ? 0 : 1;
+      dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+    }
+  }
+  return dp[m][n];
+}
+
+/* decide whether recognized text matches target (lenient) */
+function matchRecognition(recognized, target){
+  // target: {char, pinyin}
+  if(!recognized || recognized.length===0) return false;
+  // normalize recognized (remove spaces)
+  const rec = recognized.replace(/\s+/g,'').trim();
+  // 1) direct character contains (Chinese) - high confidence
+  if(target.char && rec.includes(target.char)) return true;
+  // 2) compare to pinyin (ASR might return pinyin or latin)
+  const recAscii = stripDiacritics(rec.replace(/[^0-9a-z\u00C0-\u017F]/gi,'')); // basic
+  const targetAscii = stripDiacritics(target.pinyin);
+  if(recAscii && targetAscii){
+    const dist = levenshtein(recAscii, targetAscii);
+    const ratio = dist / Math.max(recAscii.length, targetAscii.length);
+    if(ratio <= 0.35) return true; // lenient threshold
+  }
+  // 3) compare as characters using Levenshtein (if recognized returned Chinese)
+  const distC = levenshtein(rec, (target.char||''));
+  if(Math.max(rec.length, (target.char||'').length) > 0){
+    const r = distC / Math.max(rec.length, (target.char||'').length);
+    if(r <= 0.35) return true;
+  }
+  return false;
+}
+
+/* ============================
+   Game flows (all race themed)
+   ============================ */
+
+/* shared helpers */
+function randomOppAdvance(){ return Math.random() < 0.6 ? 1 : 0; }
+function opponentMoveAfterFail(){
+  state.pos.op1 = Math.min(state.trackLen-1, state.pos.op1 + randomOppAdvance());
+  state.pos.op2 = Math.min(state.trackLen-1, state.pos.op2 + randomOppAdvance());
+  placeCars();
+}
+
+function checkFinish(){
+  const max = Math.max(state.pos.wes, state.pos.op1, state.pos.op2);
+  if(state.pos.wes >= state.trackLen-1 || state.pos.op1 >= state.trackLen-1 || state.pos.op2 >= state.trackLen-1){
+    // find winner
+    const winner = state.pos.wes >= state.trackLen-1 ? 'Wesley' : (state.pos.op1 >= state.trackLen-1 ? state.opponents[0].name : state.opponents[1].name);
+    // show overlay result
+    showResult(winner);
+    return true;
+  }
+  return false;
+}
+
+function showResult(winner){
+  // play sounds & celebrate if Wesley wins
+  if(winner==='Wesley'){ playWin(); speakChinese('我们赢了！'); celebrate(); } else { playError(); speakChinese('下次再来！'); }
+  const resDiv = document.createElement('div');
+  resDiv.style.padding='14px';
+  resDiv.innerHTML = `<div style="text-align:center;font-weight:900;font-size:1.1rem">${winner} wins the race!</div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+    <button class="btn" id="playAgain">Play again</button>
+    <button class="btn secondary" id="toHome">Home</button>
+  </div>`;
+  trackWrap.innerHTML = ''; trackWrap.appendChild(resDiv);
+  document.getElementById('playAgain').onclick = ()=>{ resetRacePositions(); renderTrack(); if(state.mode) startMode(state.mode); };
+  document.getElementById('toHome').onclick = ()=>{ renderTrack(); board.querySelector('.controls').scrollIntoView({behavior:'smooth'}); };
+}
+
+/* ===== Training (Flash-Race) =====
+   - Shows large tiles for 6 words in the chosen category.
+   - Tapping the right tile (after hearing the word) moves Wesley forward.
+   - Wrong taps move opponents a bit.
+*/
+function startTraining(){
+  state.mode = 'training';
+  resetRacePositions(); renderTrack();
+  const cat = CATEGORIES.find(c=>c.id===state.chosenCategory);
+  const pool = shuffle(cat.words).slice(0,6);
+  trackWrap.innerHTML = '';
+  const banner = document.createElement('div'); banner.className='target-banner'; banner.innerHTML = `<div style="font-size:1.1rem">Training — Tap the item you hear</div><div style="margin-left:auto"><button class="btn secondary" id="btnHear">🔊 Hear</button></div>`;
+  trackWrap.appendChild(banner);
+
+  const tiles = document.createElement('div'); tiles.className='tiles';
+  pool.forEach(w=>{
+    const t = document.createElement('div'); t.className='tile'; t.dataset.id = w.id;
+    t.innerHTML = `<div style="font-size:32px">${w.emoji? w.emoji : '🔤'}</div><div style="font-size:18px;margin-top:8px">${w.char}</div><div class="small">${w.pinyin}</div>`;
+    t.onclick = ()=>{
+      if(w.id === state.target.id){
+        // correct
+        state.pos.wes = Math.min(state.trackLen-1, state.pos.wes + 1);
+        placeCars(); playSuccess(); speakChinese('太棒了！');
+      } else {
+        // wrong
+        opponentMoveAfterFail(); playError(); speakChinese('不对哦');
+      }
+      // next word or end
+      if(!checkFinish()){
+        setTimeout(()=> chooseTrainingWord(pool,tiles), 600);
+      }
+    };
+    tiles.appendChild(t);
+  });
+  trackWrap.appendChild(tiles);
+  chooseTrainingWord(pool, tiles);
+  document.getElementById('btnHear').onclick = ()=> { if(state.target) speakChinese(state.target.char); playEngineRev(600); };
+}
+function chooseTrainingWord(pool, tiles){
+  state.target = pool[Math.floor(Math.random()*pool.length)];
+  // highlight target pinyin/char somewhere
+  // speak the target
+  speakChinese(state.target.char);
+  playEngineRev(450);
+  // small visual cue: pulse the correct tile border briefly
+  tiles.querySelectorAll('.tile').forEach(t=>t.style.outline='none');
+  const correctTile = Array.from(tiles.children).find(t=>t.dataset.id===state.target.id);
+  if(correctTile){ correctTile.style.outline='3px solid rgba(0,0,0,0.0)'; setTimeout(()=> correctTile.style.outline='none',500); }
+}
+
+/* ===== Speed Match (Sound match) =====
+   - Play a target sound (word), present 4 tiles, tap the right one to move Wesley forward.
+*/
+function startSpeedMatch(){
+  state.mode = 'match';
+  resetRacePositions(); renderTrack();
+  const cat = CATEGORIES.find(c=>c.id===state.chosenCategory);
+  const rounds = 6; let cur = 0;
+  const panel = document.createElement('div'); panel.style.padding='8px'; panel.innerHTML = `<div style="font-weight:900">Speed Match — Tap the car you hear</div><div style="margin-top:8px" id="score">Round: 0 / ${rounds}</div>`;
+  const grid = document.createElement('div'); grid.className='tiles'; grid.style.marginTop='12px';
+  trackWrap.innerHTML=''; trackWrap.appendChild(panel); trackWrap.appendChild(grid);
+
+  function nextRound(){
+    if(cur >= rounds){ showChampResult(); return; }
+    cur++;
+    document.getElementById('score').textContent = `Round: ${cur} / ${rounds}`;
+    const choices = pickN(cat.words,4);
+    const target = choices[Math.floor(Math.random()*choices.length)];
+    state.target = target;
+    grid.innerHTML = '';
+    choices.forEach(ch=>{
+      const t = document.createElement('div'); t.className='tile'; t.innerHTML = `<div style="font-size:28px">${ch.emoji?ch.emoji:'🔤'}</div><div style="font-size:18px">${ch.char}</div><div class="small">${ch.pinyin}</div>`;
+      t.onclick = ()=>{
+        if(ch.id===target.id){
+          state.pos.wes = Math.min(state.trackLen-1, state.pos.wes + 1); placeCars(); playSuccess(); speakChinese('很好！');
+        } else {
+          opponentMoveAfterFail(); playError(); speakChinese('不对哦');
+        }
+        if(!checkFinish()){
+          setTimeout(()=> nextRound(), 600);
+        }
+      };
+      grid.appendChild(t);
+    });
+    // auto-play target
+    setTimeout(()=>{ speakChinese(target.char); playEngineRev(380); }, 300);
+  }
+  nextRound();
+
+  function showChampResult(){ /* small finish screen for match */
+    trackWrap.innerHTML = `<div style="text-align:center;font-weight:900">Speed Match complete!</div><div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+      <button class="btn" id="again">Play again</button><button class="btn secondary" id="home">Home</button></div>`;
+    document.getElementById('again').onclick = ()=> startSpeedMatch();
+    document.getElementById('home').onclick = ()=> { renderTrack(); };
+  }
+}
+
+/* ===== Pronunciation Challenge =====
+   - For each target, Wesley is prompted to speak.
+   - The app listens (SpeechRecognition) and does fuzzy compare.
+   - Correct => Wesley moves; incorrect => opponents move and friendly hint given.
+*/
+function startPronunciation(){
+  state.mode = 'pron';
+  resetRacePositions(); renderTrack();
+  const cat = CATEGORIES.find(c=>c.id===state.chosenCategory);
+  const pool = shuffle(cat.words).slice(0,6);
+  let index = 0;
+  trackWrap.innerHTML = '';
+  const header = document.createElement('div'); header.className='target-banner'; header.innerHTML = `<div style="font-weight:900">Pronunciation Challenge — Say the word</div><div style="margin-left:auto"><button class="btn secondary" id="btnHear2">🔊 Hear</button></div>`;
+  trackWrap.appendChild(header);
+  const bigTile = document.createElement('div'); bigTile.style.marginTop='10px';
+  trackWrap.appendChild(bigTile);
+  const micRow = document.createElement('div'); micRow.style.marginTop='12px';
+  const micBtn = document.createElement('button'); micBtn.className='mic-btn'; micBtn.textContent = '🎤 Speak';
+  const hint = document.createElement('div'); hint.className='small'; hint.style.marginTop='8px';
+  micRow.appendChild(micBtn); micRow.appendChild(hint);
+  trackWrap.appendChild(micRow);
+
+  function showWord(w){
+    state.target = w;
+    bigTile.innerHTML = `<div style="font-size:48px">${w.emoji? w.emoji : '🔤'}</div><div style="font-size:36px;margin-top:6px">${w.char}</div><div class="small">${w.pinyin}</div>`;
+    speakChinese(w.char); playEngineRev(420);
+    hint.textContent = 'Press Speak, then say the word clearly.';
+  }
+
+  micBtn.onclick = ()=>{
+    if(!SpeechRec){ hint.textContent = 'Speech recognition not available in this browser. Try Chrome on Android or Desktop.'; return; }
+    micBtn.disabled = true; micBtn.textContent = 'Listening...';
+    initRecognizer();
+    if(!recognizer){ hint.textContent = 'Speech recognition unavailable'; micBtn.disabled=false; micBtn.textContent='🎤 Speak'; return; }
+    recognizer.onresult = (ev)=>{
+      const transcript = Array.from(ev.results).map(r=>r[0].transcript).join(' ');
+      // evaluate
+      const ok = matchRecognition(transcript, state.target);
+      if(ok){
+        state.pos.wes = Math.min(state.trackLen-1, state.pos.wes + 1); placeCars(); playSuccess(); speakChinese('太棒了！'); hint.textContent = 'Nice! You moved forward!';
+      } else {
+        opponentMoveAfterFail(); playError(); speakChinese('再试一次'); hint.textContent = 'Not quite — try again or press Hear to listen.';
+      }
+      micBtn.disabled = false; micBtn.textContent = '🎤 Speak';
+      // advance to next word after short delay (unless race finished)
+      if(!checkFinish()){
+        index++;
+        if(index >= pool.length) index = 0;
+        setTimeout(()=> showWord(pool[index]), 700);
+      }
+    };
+    recognizer.onerror = (e)=>{ micBtn.disabled=false; micBtn.textContent='🎤 Speak'; hint.textContent = 'Recognition error: ' + (e.error || 'unknown'); };
+    recognizer.onend = ()=> { micBtn.disabled=false; micBtn.textContent='🎤 Speak'; };
+    // start listening
+    try{ recognizer.start(); }catch(err){ micBtn.disabled=false; micBtn.textContent='🎤 Speak'; hint.textContent = 'Could not start recognition'; }
+  };
+
+  document.getElementById('btnHear2').onclick = ()=>{ if(state.target) { speakChinese(state.target.char); playEngineRev(360); } };
+  // start with first
+  showWord(pool[index]);
+}
+
+/* ===== Championship Quiz =====
+   - multi-round quiz, mixed tasks: hear & tap, read & choose, speak to advance.
+*/
+function startChampionship(){
+  state.mode = 'champ';
+  resetRacePositions(); renderTrack();
+  const cat = CATEGORIES.find(c=>c.id===state.chosenCategory);
+  const rounds = 8; let cur=0;
+  const panel = document.createElement('div'); panel.innerHTML = `<div style="font-weight:900">Championship — Mix of listening, tapping, and speaking</div><div id="status" class="small" style="margin-top:6px">Round 0 / ${rounds}</div>`;
+  const area = document.createElement('div'); area.style.marginTop='12px';
+  trackWrap.innerHTML=''; trackWrap.appendChild(panel); trackWrap.appendChild(area);
+
+  function next(){
+    if(cur>=rounds){ showResult(state.pos.wes >= Math.max(state.pos.op1,state.pos.op2) ? 'Wesley' : (state.pos.op1>state.pos.op2? state.opponents[0].name : state.opponents[1].name)); return; }
+    cur++; document.getElementById('status').textContent = `Round ${cur} / ${rounds}`;
+    area.innerHTML = '';
+    const taskType = ['listen','tap','speak'][Math.floor(Math.random()*3)];
+    const choices = pickN(cat.words,3);
+    const target = choices[Math.floor(Math.random()*choices.length)];
+    state.target = target;
+
+    if(taskType === 'listen'){
+      // play target, present 3 tiles -> tap
+      area.innerHTML = `<div style="font-weight:900">Listen & Tap</div>`;
+      const grid = document.createElement('div'); grid.className='tiles';
+      choices.forEach(ch=>{
+        const t = document.createElement('div'); t.className='tile'; t.innerHTML = `<div style="font-size:32px">${ch.emoji||'🔤'}</div><div style="font-size:18px">${ch.char}</div><div class="small">${ch.pinyin}</div>`;
+        t.onclick = ()=>{
+          if(ch.id===target.id){ state.pos.wes=Math.min(state.trackLen-1,state.pos.wes+1); placeCars(); playSuccess(); speakChinese('很好'); }
+          else{ opponentMoveAfterFail(); playError(); speakChinese('不对'); }
+          if(!checkFinish()) setTimeout(next,600);
+        };
+        grid.appendChild(t);
+      });
+      area.appendChild(grid);
+      setTimeout(()=>{ speakChinese(target.char); playEngineRev(360); }, 300);
+    } else if(taskType === 'tap'){
+      // show emoji and ask "Which is ____?" where blank is Chinese char (child reads pinyin/char)
+      area.innerHTML = `<div style="font-weight:900">Read & Tap</div><div style="font-size:28px;margin-top:8px">${target.char}</div><div class="small">${target.pinyin}</div>`;
+      const grid = document.createElement('div'); grid.className='tiles';
+      choices.forEach(ch=>{
+        const t=document.createElement('div'); t.className='tile'; t.innerHTML = `<div style="font-size:32px">${ch.emoji||'🔤'}</div><div style="font-size:16px;margin-top:6px">${ch.en}</div>`;
+        t.onclick = ()=>{
+          if(ch.id===target.id){ state.pos.wes=Math.min(state.trackLen-1,state.pos.wes+1); placeCars(); playSuccess(); speakChinese('太棒了'); }
+          else{ opponentMoveAfterFail(); playError(); speakChinese('不对哦'); }
+          if(!checkFinish()) setTimeout(next,600);
+        };
+        grid.appendChild(t);
+      });
+      area.appendChild(grid);
+    } else {
+      // speak task: show item, ask child to say it
+      area.innerHTML = `<div style="font-weight:900">Say it!</div><div style="font-size:36px;margin-top:8px">${target.char}</div><div class="small">${target.pinyin}</div>`;
+      const mic = document.createElement('button'); mic.className='mic-btn'; mic.textContent = '🎤 Speak';
+      const hint = document.createElement('div'); hint.className='small'; hint.style.marginTop='8px';
+      mic.onclick = ()=>{
+        if(!SpeechRec){ hint.textContent = 'Speech recognition not available here. Try Chrome.'; return; }
+        mic.disabled=true; mic.textContent='Listening...';
+        initRecognizer();
+        if(!recognizer){ hint.textContent='Recognizer init failed'; mic.disabled=false; mic.textContent='🎤 Speak'; return; }
+        recognizer.onresult = (ev)=>{
+          const t = Array.from(ev.results).map(r=>r[0].transcript).join(' ');
+          const ok = matchRecognition(t, target);
+          if(ok){ state.pos.wes=Math.min(state.trackLen-1,state.pos.wes+1); placeCars(); playSuccess(); speakChinese('很好！'); }
+          else{ opponentMoveAfterFail(); playError(); speakChinese('再试一次'); hint.textContent='Try again or press Hear'; }
+          mic.disabled=false; mic.textContent='🎤 Speak';
+          if(!checkFinish()) setTimeout(next,700);
+        };
+        recognizer.onerror = (e)=>{ mic.disabled=false; mic.textContent='🎤 Speak'; hint.textContent='Recognition error'; };
+        recognizer.onend = ()=>{ mic.disabled=false; mic.textContent='🎤 Speak'; };
+        try{ recognizer.start(); } catch(err){ mic.disabled=false; mic.textContent='🎤 Speak'; hint.textContent='Could not start recognition'; }
+      };
+      const hearBtn = document.createElement('button'); hearBtn.className='btn secondary'; hearBtn.textContent='🔊 Hear';
+      hearBtn.onclick = ()=>{ speakChinese(target.char); playEngineRev(300); };
+      area.appendChild(mic); area.appendChild(hearBtn); area.appendChild(hint);
+    }
+  }
+  next();
+}
+
+/* ====== helper finish used by speed match ====== */
+function showChampResult(){
+  trackWrap.innerHTML = `<div style="text-align:center;font-weight:900">Speed Match done!</div><div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+    <button class="btn" id="again">Play again</button><button class="btn secondary" id="toHome">Home</button></div>`;
+  document.getElementById('again').onclick = ()=> startSpeedMatch();
+  document.getElementById('toHome').onclick = ()=> renderTrack();
+}
+
+/* ============================
+   Buttons & initial render
+   ============================ */
+document.getElementById('modeTrain').onclick = ()=> startTraining();
+document.getElementById('modeMatch').onclick = ()=> startSpeedMatch();
+document.getElementById('modePron').onclick = ()=> startPronunciation();
+document.getElementById('modeChamp').onclick = ()=> startChampionship();
+document.getElementById('btnReset').onclick = ()=>{
+  localStorage.removeItem('wesRaceHistory'); localStorage.removeItem('wesRaceSettings');
+  state.pos = {wes:0,op1:0,op2:0}; state.chosenCarIndex = 0; state.chosenCategory = 'animals'; saveSettings(); renderCarousel(); renderTabs(); renderTrack();
+  alert('Progress reset.');
+};
+
+renderCarousel(); renderTabs(); renderTrack();
+initRecognizer();
+
+/* Accessibility: keyboard repeat last speak (r) */
 let lastSpoken = null;
-window.addEventListener('keydown', (e)=> {
-  if(e.key==='r'){ if(lastSpoken) speakChinese(lastSpoken); }
-});
+window.addEventListener('keydown', e=>{ if(e.key==='r' && lastSpoken) speakChinese(lastSpoken); });
+
+/* ensure voices loaded in some browsers */
+if(window.speechSynthesis) speechSynthesis.onvoiceschanged = ()=>{};
 
 </script>
 </body>
 </html>
-
